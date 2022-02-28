@@ -226,45 +226,45 @@ def textures(dt0_v, dt0_h, kernel_v, kernel_h, sharpness):
 
 @st.cache(max_entries=MAX_ENTRIES, show_spinner=False)
 #@profile
-def construct_map(wx, wy, lamda):
+def construct_map(wv, wh, lamda):
     
-    r, c = wx.shape        
+    r, c = wh.shape        
     k = r * c
     
-    dx = -lamda * flatten_by_cols(wx) 
-    dy = -lamda * flatten_by_cols(wy)
+    dh = -lamda * flatten_by_cols(wh) 
+    dv = -lamda * flatten_by_cols(wv)
     
-    wx_permuted_cols = np.roll(wx,1,axis=1)
-    dx_permuted_cols = -lamda * flatten_by_cols(wx_permuted_cols)
+    wh_permuted_cols = np.roll(wh,1,axis=1)
+    dh_permuted_cols = -lamda * flatten_by_cols(wh_permuted_cols)
     
-    wy_permuted_rows = np.roll(wy,1,axis=0)
-    dy_permuted_rows = -lamda * flatten_by_cols(wy_permuted_rows)
+    wv_permuted_rows = np.roll(wv,1,axis=0)
+    dv_permuted_rows = -lamda * flatten_by_cols(wv_permuted_rows)
 
-    A = 1 - (dx + dy + dx_permuted_cols + dy_permuted_rows)
+    A = 1 - (dh + dv + dh_permuted_cols + dv_permuted_rows)
         
-    wx_permuted_cols_head = np.zeros_like(wx_permuted_cols) 
-    wx_permuted_cols_head[:,0] = wx_permuted_cols[:,0]
-    dx_permuted_cols_head = -lamda * flatten_by_cols(wx_permuted_cols_head)
+    wh_permuted_cols_head = np.zeros_like(wh_permuted_cols) 
+    wh_permuted_cols_head[:,0] = wh_permuted_cols[:,0]
+    dh_permuted_cols_head = -lamda * flatten_by_cols(wh_permuted_cols_head)
     
-    wy_permuted_rows_head = np.zeros_like(wy_permuted_rows)
-    wy_permuted_rows_head[0,:] = wy_permuted_rows[0,:]
-    dy_permuted_rows_head = -lamda * flatten_by_cols(wy_permuted_rows_head)
+    wv_permuted_rows_head = np.zeros_like(wv_permuted_rows)
+    wv_permuted_rows_head[0,:] = wv_permuted_rows[0,:]
+    dv_permuted_rows_head = -lamda * flatten_by_cols(wv_permuted_rows_head)
 
-    wx_no_tail = np.zeros_like(wx)
-    wx_no_tail[:,:-1] = wx[:,:-1]
-    dx_no_tail = -lamda * flatten_by_cols(wx_no_tail)
+    wh_no_tail = np.zeros_like(wh)
+    wh_no_tail[:,:-1] = wh[:,:-1]
+    dh_no_tail = -lamda * flatten_by_cols(wh_no_tail)
 
-    wy_no_tail = np.zeros_like(wy)
-    wy_no_tail[:-1,:] = wy[:-1,:]
-    dy_no_tail = -lamda * flatten_by_cols(wy_no_tail)
+    wv_no_tail = np.zeros_like(wv)
+    wv_no_tail[:-1,:] = wv[:-1,:]
+    dv_no_tail = -lamda * flatten_by_cols(wv_no_tail)
     
-    Ax = spdiags([dx_permuted_cols_head, dx_no_tail], [-k+r, -r], k, k)  
+    Ah = spdiags([dh_permuted_cols_head, dh_no_tail], [-k+r, -r], k, k)  
     
-    Ay = spdiags([dy_permuted_rows_head, dy_no_tail], [-r+1,-1],  k, k)
+    Av = spdiags([dv_permuted_rows_head, dv_no_tail], [-r+1,-1],  k, k)
     
     d = spdiags(A, 0, k, k)
     
-    A = Ax + Ay
+    A = Ah + Av
     A = A + A.T + d
 
     return A
@@ -485,13 +485,13 @@ def bimef(image, exposure_ratio=-1, enhance=0.5,
     kernel_v, kernel_h = kernel(dt0_v, dt0_h, sigma)
     log_memory('bimef|kernel|E')
     log_memory('bimef|textures|B')
-    wx, wy = textures(dt0_v, dt0_h, kernel_v, kernel_h, sharpness)
+    wv, wh = textures(dt0_v, dt0_h, kernel_v, kernel_h, sharpness)
     log_memory('bimef|textures|E')
     ######################################################
 
     ############ ILLUMINATION MAP  ###########################
     log_memory('bimef|construct_map|B')
-    illumination_map = construct_map(wx, wy, lamda) 
+    illumination_map = construct_map(wv, wh, lamda) 
     log_memory('bimef|construct_map|E')
     ######################################################
 

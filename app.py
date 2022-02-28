@@ -12,7 +12,7 @@ import os
 st.set_page_config(page_title="Neuro HDR", layout="wide")
 
 def run_app(default_granularity=0.1, default_speed=10, default_power=0.8, default_smoothness=0.3, 
-            default_dim_size=(50), default_dim_threshold=0.5, default_a=-0.3293, default_b=1.258, default_exposure_ratio=-1):
+            default_dim_size=(50), default_dim_threshold=0.5, default_a=-0.3293, default_b=1.1258, default_exposure_ratio=-1):
 
     log_memory('run_app||B')
 
