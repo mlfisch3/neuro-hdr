@@ -41,7 +41,7 @@ def run_command():
         st.session_state.console_out = f'exited with error\nreturncode: {e.returncode}\ncmd: {e.cmd}\noutput: {e.output}\nstderr: {e.stderr}'
         st.session_state.console_out_timestamp = f'{timestamp()}'
 
-    print(f'[{timestamp()}] st.session_state.console_out: {st.session_state.console_out}')
+    #print(f'[{timestamp()}] st.session_state.console_out: {st.session_state.console_out}')
 
 
 def run_app(default_granularity=0.1, default_speed=10, default_power=0.8, default_smoothness=0.3, 
