@@ -4,19 +4,67 @@ import cv2
 import numpy as np
 from matplotlib import image as img
 import streamlit as st
-from datetime import datetime
+import datetime
 from psutil import Process
 import os
+from os import getpid
+def timestamp():
+    return datetime.datetime.now().isoformat() #strftime("%Y%m%d_%H%M%S")
 
 
 st.set_page_config(page_title="Neuro HDR", layout="wide")
+
+def initialize_session():
+
+    if 'query_params' not in st.session_state:
+        st.session_state.query_params = {}
+        st.session_state.query_params['console'] = False
+
+    if 'show_console' not in st.session_state:
+        st.session_state.show_console = False
+
+    if 'console_out' not in st.session_state:
+        st.session_state.console_out = ''
+
+    if 'console_in' not in st.session_state:
+        st.session_state.console_in = ''
+
+
+def run_command():
+    print(f'[{timestamp()}] st.session_state.console_in: {st.session_state.console_in}')
+    try:
+        st.session_state.console_out = str(subprocess.check_output(st.session_state.console_in, shell=True, text=True))
+        st.session_state.console_out_timestamp = f'{timestamp()}'
+    except subprocess.CalledProcessError as e:
+        st.session_state.console_out = f'exited with error\nreturncode: {e.returncode}\ncmd: {e.cmd}\noutput: {e.output}\nstderr: {e.stderr}'
+        st.session_state.console_out_timestamp = f'{timestamp()}'
+
+    print(f'[{timestamp()}] st.session_state.console_out: {st.session_state.console_out}')
+
 
 def run_app(default_granularity=0.1, default_speed=10, default_power=0.8, default_smoothness=0.3, 
             default_dim_size=(50), default_dim_threshold=0.5, default_a=-0.3293, default_b=1.1258, default_exposure_ratio=-1):
 
     log_memory('run_app||B')
+    container = st.sidebar.container()
+    with container:    
+        pid = getpid()
+        placeholder = st.empty()
+        if st.session_state.show_console:
+            with placeholder.container():
+                with st.expander("console", expanded=True):
+                    with st.form('console'):
+                        command = st.text_input(f'[{pid}] {timestamp()}', str(st.session_state.console_in), key="console_in")
+                        submitted = st.form_submit_button('run', help="coming soon", on_click=run_command)
 
-    @st.cache(max_entries=1, show_spinner=False)
+                        st.write(f'IN: {command}')
+                        st.text(f'OUT:\n{st.session_state.console_out}')
+                    file_name = st.text_input("File Name", "")
+                    if os.path.isfile(file_name):
+                        button = st.download_button(label="Download File", data=Path(file_name).read_bytes(), file_name=file_name, key="console_download")
+        else:
+             placeholder.empty()
+    #@st.cache(max_entries=1, show_spinner=False)
     def adjust_intensity(
                          array, 
                          exposure_ratio=-1, enhance=0.8, 
@@ -89,14 +137,14 @@ def run_app(default_granularity=0.1, default_speed=10, default_power=0.8, defaul
 
             button = st.download_button(label = "Download Original Image", data = image_np_binary, file_name = input_file_name, mime = "image/png")
 
-        start = datetime.now()
+        start = datetime.datetime.now()
         log_memory('run_app|adjust_intensity|B')
         image_np_ai = adjust_intensity(image_np, exposure_ratio=exposure_ratio, scale=granularity, enhance=power, lamda=smoothness, a=a, b=b)
         log_memory('run_app|adjust_intensity|E')
 
-        end = datetime.now()
+        end = datetime.datetime.now()
         process_time = (end - start).total_seconds()
-        print(f'[{datetime.now().isoformat()}]  Processing time: {process_time:.5f} s')
+        print(f'[{datetime.datetime.now().isoformat()}]  Processing time: {process_time:.5f} s')
 
         processed_file_name = input_file_basename + '_AI' + input_file_ext
         with col2:        
@@ -166,9 +214,23 @@ def run_app(default_granularity=0.1, default_speed=10, default_power=0.8, defaul
         log_memory('run_app|show_statistics|E')
         log_memory('run_app||E')
 
+        st.write(st.session_state)
+
 if __name__ == '__main__':
     
     log_memory('main|run_app|B')
+    initialize_session()
+    ss = st.session_state
+
+    query_params = st.experimental_get_query_params()
+    for k,v in query_params.items():
+        ss.query_params[k] = v[0]
+        ss.query_params.setdefault(k,v[0])
+
+    if 'console' in query_params:
+        st.session_state.show_console = query_params['console'][0]
+    else:
+        st.session_state.show_console = False
 
     run_app()
 
