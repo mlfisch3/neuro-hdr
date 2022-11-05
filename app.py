@@ -8,6 +8,8 @@ import datetime
 from psutil import Process
 import os
 from os import getpid
+import subprocess
+
 def timestamp():
     return datetime.datetime.now().isoformat() #strftime("%Y%m%d_%H%M%S")
 
